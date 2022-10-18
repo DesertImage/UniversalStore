@@ -6,18 +6,14 @@ namespace UniStore
 {
     public abstract class BaseStore : IStore
     {
-        public event Action<bool> OnInitialized;
-
         public event Action<PurchaseInfo> OnPurchaseStarted;
 
-        public event Action<PurchaseInfo> OnPurchaseSuccess;
+        public event Action<PurchaseInfo, string> OnPurchaseSuccess;
         public event Action<PurchaseInfo, string> OnPurchaseFailed;
 
         public event Action<bool> OnRestore;
 
         public IDictionary<string, IAPProduct> Products { get; }
-
-        public abstract bool IsInitialized { get; }
 
         protected readonly IValidator Validator;
 
@@ -31,8 +27,6 @@ namespace UniStore
 
             Validator = validator;
         }
-
-        public abstract void Initialize();
 
         public abstract bool IsPurchased(string id);
 
@@ -81,19 +75,16 @@ namespace UniStore
 
         #region EVENTS
 
-        protected void Initialized(bool result)
-        {
-            OnInitialized?.Invoke(result);
-        }
+        // protected void Initialized(bool result) => OnInitialized?.Invoke(result);
 
         protected void PurchaseStarted(PurchaseInfo purchaseInfo)
         {
             OnPurchaseStarted?.Invoke(purchaseInfo);
         }
 
-        protected void PurchaseSuccess(PurchaseInfo purchaseInfo)
+        protected void PurchaseSuccess(PurchaseInfo purchaseInfo, string receipt)
         {
-            OnPurchaseSuccess?.Invoke(purchaseInfo);
+            OnPurchaseSuccess?.Invoke(purchaseInfo, receipt);
         }
 
         protected void PurchaseFailed(PurchaseInfo purchaseInfo, string failureReason)

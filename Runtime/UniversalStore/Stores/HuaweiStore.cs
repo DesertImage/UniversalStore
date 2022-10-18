@@ -8,10 +8,11 @@ using HuaweiMobileServices.Utils;
 
 namespace UniStore
 {
-    public class HuaweiStore : BaseStore
+    public class HuaweiStore : BaseStore, IInitable
     {
         // Please insert your products via custom editor. You can find it in Huawei > Kit Settings > IAP tab.
-        public override bool IsInitialized { get; }
+        public event Action<bool> OnInitialized;
+        public bool IsInitialized { get; private set; }
 
         private List<InAppPurchaseData> _purchasedProducts;
 
@@ -24,7 +25,7 @@ namespace UniStore
             _productInfos = new Dictionary<string, ProductInfo>();
         }
 
-        public override void Initialize()
+        public void Initialize()
         {
             HMSIAPManager.Instance.OnBuyProductSuccess += OnBuyProductSuccess;
             HMSIAPManager.Instance.OnBuyProductFailure += OnBuyProductFailure;
@@ -106,7 +107,8 @@ namespace UniStore
                             ProductId = arg.InAppPurchaseData.ProductId,
                             Price = arg.InAppPurchaseData.Price.ToString(),
                             Currency = arg.InAppPurchaseData.Currency,
-                        }
+                        },
+                        arg.InAppPurchaseDataRawJSON
                     );
                 }
             );
@@ -145,10 +147,11 @@ namespace UniStore
 #if DEBUG
             UnityEngine.Debug.LogError("<b>[HuaweiStore]</b> IAP is ready");
 #endif
-            Initialized(true);
+            OnInitialized?.Invoke(true);
         }
 
         #endregion
     }
 }
+
 #endif

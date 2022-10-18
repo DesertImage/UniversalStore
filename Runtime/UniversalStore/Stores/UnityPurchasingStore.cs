@@ -1,19 +1,19 @@
 #if !HUAWEI && !SAMSUNG
+
 using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using Newtonsoft.Json;
 using UnityEngine;
 using UnityEngine.Purchasing;
-using UnityEngine.Purchasing.Extension;
 
 namespace UniStore
 {
-    public class UnityPurchasingStore : BaseStore, IStoreListener
+    public class UnityPurchasingStore : BaseStore, IStoreListener, IInitable
     {
-        public override bool IsInitialized =>
-            !_initializationFailed && _storeController != null && _extensionProvider != null;
+        public event Action<bool> OnInitialized;
+
+        public bool IsInitialized => !_initializationFailed && _storeController != null && _extensionProvider != null;
 
         private bool _initializationFailed;
 
@@ -28,7 +28,7 @@ namespace UniStore
             _purchased = new HashSet<string>();
         }
 
-        public override void Initialize()
+        public void Initialize()
         {
             var builder = ConfigurationBuilder.Instance(StandardPurchasingModule.Instance());
 
@@ -137,17 +137,17 @@ namespace UniStore
             _storeController = controller;
             _extensionProvider = extensionProvider;
 
-            Initialized(true);
+            OnInitialized?.Invoke(true);
         }
 
         public void OnInitializeFailed(InitializationFailureReason error)
         {
 #if DEBUG
-            UnityEngine.Debug.LogError("<b>[UnityPurchasingStore]</b> initialization failed:\n{error}");
+            Debug.LogError("<b>[UnityPurchasingStore]</b> initialization failed:\n{error}");
 #endif
             _initializationFailed = true;
 
-            Initialized(false);
+            OnInitialized?.Invoke(false);
         }
 
         public PurchaseProcessingResult ProcessPurchase(PurchaseEventArgs purchaseEvent)
@@ -170,9 +170,8 @@ namespace UniStore
                 ValidationProcess(receiptPayload, id, result =>
                 {
 #if DEBUG
-                    UnityEngine.Debug.LogError("<b>[UnityPurchasingStore]</b> VALIDATION RESULT HANDLED");
+                    Debug.LogError("<b>[UnityPurchasingStore]</b> VALIDATION RESULT HANDLED");
 #endif
-
                     ApplyPurchase(purchaseEvent);
 
                     var metadata = purchaseEvent.purchasedProduct.metadata;
@@ -184,7 +183,8 @@ namespace UniStore
                             ProductId = id,
                             Price = metadata.localizedPrice.ToString(CultureInfo.InvariantCulture),
                             Currency = metadata.isoCurrencyCode
-                        }
+                        },
+                        purchaseEvent.purchasedProduct.receipt
                     );
                 });
             }
@@ -215,4 +215,5 @@ namespace UniStore
         #endregion
     }
 }
+
 #endif

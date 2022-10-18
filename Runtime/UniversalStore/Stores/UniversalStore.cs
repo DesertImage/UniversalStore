@@ -3,16 +3,16 @@ using System.Collections.Generic;
 
 namespace UniStore
 {
-    public class UniversalStore : IStore
+    public class UniversalStore : IStore, IInitable
     {
         public event Action<bool> OnInitialized;
         public event Action<PurchaseInfo> OnPurchaseStarted;
-        public event Action<PurchaseInfo> OnPurchaseSuccess;
+        public event Action<PurchaseInfo, string> OnPurchaseSuccess;
         public event Action<PurchaseInfo, string> OnPurchaseFailed;
         public event Action<bool> OnRestore;
 
         public IDictionary<string, IAPProduct> Products => _store?.Products;
-        public bool IsInitialized => _store?.IsInitialized ?? false;
+        public bool IsInitialized => _store is IInitable { IsInitialized: true };
 
         private readonly IStore _store;
 
@@ -36,7 +36,10 @@ namespace UniStore
             _store = new UnityPurchasingStore(products, validator);
 #endif
 #endif
-            _store.OnInitialized += OnInitialized;
+            if (_store is IInitable initable)
+            {
+                initable.OnInitialized += OnInitialized;
+            }
 
             _store.OnPurchaseStarted += OnPurchaseStarted;
             _store.OnPurchaseSuccess += OnPurchaseSuccess;
@@ -45,39 +48,18 @@ namespace UniStore
             _store.OnRestore += OnRestore;
         }
 
-        public void Initialize()
-        {
-            _store.Initialize();
-        }
+        public void Initialize() => (_store as IInitable)?.Initialize();
 
-        public bool IsPurchased(string id)
-        {
-            return _store.IsPurchased(id);
-        }
+        public bool IsPurchased(string id) => _store.IsPurchased(id);
 
-        public string GetPrice(string id)
-        {
-            return _store.GetPrice(id);
-        }
+        public string GetPrice(string id) => _store.GetPrice(id);
 
-        public void Buy(string id)
-        {
-            _store.Buy(id);
-        }
+        public void Buy(string id) => _store.Buy(id);
 
-        public void RestorePurchases()
-        {
-            _store.RestorePurchases();
-        }
+        public void RestorePurchases() => _store.RestorePurchases();
 
-        public void TryRestorePurchases(Action<bool> callback)
-        {
-            _store.TryRestorePurchases(callback);
-        }
+        public void TryRestorePurchases(Action<bool> callback) => _store.TryRestorePurchases(callback);
 
-        public IStore CreateNewInstance()
-        {
-            return _store.CreateNewInstance();
-        }
+        public IStore CreateNewInstance() => _store.CreateNewInstance();
     }
 }
