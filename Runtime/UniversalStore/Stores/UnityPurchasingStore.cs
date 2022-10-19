@@ -9,7 +9,7 @@ using UnityEngine.Purchasing;
 
 namespace UniStore
 {
-    public class UnityPurchasingStore : BaseStore, IStoreListener, IInitable
+    public class UnityPurchasingStore : BaseStore, IStoreListener, IInitializable
     {
         public event Action<bool> OnInitialized;
 
@@ -136,6 +136,24 @@ namespace UniStore
         {
             _storeController = controller;
             _extensionProvider = extensionProvider;
+
+            ProductInfos.Clear();
+            foreach (var product in _storeController.products.all)
+            {
+                var id = product.definition.id;
+
+                ProductInfos.Add
+                (
+                    id,
+                    new PurchaseInfo
+                    {
+                        ProductId = id,
+                        Type = (IAPProductType)product.definition.type,
+                        Price = product.metadata.localizedPriceString,
+                        Currency = product.metadata.isoCurrencyCode
+                    }
+                );
+            }
 
             OnInitialized?.Invoke(true);
         }

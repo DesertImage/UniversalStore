@@ -13,13 +13,14 @@ namespace UniStore
 
         public event Action<bool> OnRestore;
 
-        public IDictionary<string, IAPProduct> Products { get; }
+        public IDictionary<string, IAPProduct> Products { get; } = new Dictionary<string, IAPProduct>();
 
+        protected IDictionary<string, PurchaseInfo> ProductInfos { get; } = new Dictionary<string, PurchaseInfo>();
         protected readonly IValidator Validator;
 
         protected BaseStore(IEnumerable<IAPProduct> products, IValidator validator = null)
         {
-            Products = new Dictionary<string, IAPProduct>();
+            Products.Clear();
             foreach (var product in products)
             {
                 Products.Add(product.Id, product);
@@ -29,6 +30,7 @@ namespace UniStore
         }
 
         public abstract bool IsPurchased(string id);
+        public PurchaseInfo GetProductInfo(string id) => ProductInfos.ContainsKey(id) ? ProductInfos[id] : default;
 
         public abstract string GetPrice(string id);
 

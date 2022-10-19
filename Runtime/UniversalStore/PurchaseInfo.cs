@@ -1,5 +1,3 @@
-using UnityEngine.Purchasing;
-
 namespace UniStore
 {
     public struct PurchaseInfo
@@ -9,6 +7,6 @@ namespace UniStore
         public string Price;
         public string Currency;
 
-        public ProductType Type;
+        public IAPProductType Type;
     }
 }

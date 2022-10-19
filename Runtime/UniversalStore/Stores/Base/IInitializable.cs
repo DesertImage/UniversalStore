@@ -2,7 +2,7 @@ using System;
 
 namespace UniStore
 {
-    public interface IInitable
+    public interface IInitializable
     {
         event Action<bool> OnInitialized;
 

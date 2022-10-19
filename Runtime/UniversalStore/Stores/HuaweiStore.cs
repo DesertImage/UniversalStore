@@ -8,7 +8,7 @@ using HuaweiMobileServices.Utils;
 
 namespace UniStore
 {
-    public class HuaweiStore : BaseStore, IInitable
+    public class HuaweiStore : BaseStore, IInitializable
     {
         // Please insert your products via custom editor. You can find it in Huawei > Kit Settings > IAP tab.
         public event Action<bool> OnInitialized;

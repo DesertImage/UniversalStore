@@ -4,17 +4,16 @@ using System.Collections.Generic;
 using System.Linq;
 using Samsung;
 using UnityEngine;
-using UnityEngine.Purchasing;
 
 namespace UniStore
 {
-    public class SamsungStore : BaseStore, IInitable
+    public class SamsungStore : BaseStore, IInitializable
     {
         private const string SetOperationModeMethod = "setOperationMode";
         private const string GetProductDetailsMethod = "getProductDetails";
         private const string StartPaymentMethod = "startPayment";
         private const string ConsumePurchasedItemsMethod = "consumePurchasedItems";
-        
+
         public Action<ProductInfoList> OnGetProductsDetailsListener;
         public Action<PurchasedInfo> OnStartPaymentListener;
         public Action<ConsumedList> OnConsumePurchasedItemListener;
@@ -66,7 +65,20 @@ namespace UniStore
                     {
                         foreach (var result in productInfoList.results)
                         {
-                            _productInfos.Add(result.mItemId, result);
+                            var id = result.mItemId;
+
+                            _productInfos.Add(id, result);
+                            ProductInfos.Add
+                            (
+                                id,
+                                new PurchaseInfo
+                                {
+                                    ProductId = id,
+                                    Type = GetProductType(result),
+                                    Price = result.mItemPrice,
+                                    Currency = result.mCurrencyCode
+                                }
+                            );
                         }
                     }
                 );
@@ -80,7 +92,7 @@ namespace UniStore
             return !_productInfos.TryGetValue(id, out var info) ? "$0.01 (fake)" : info.mItemPrice;
         }
 
-        protected override void BuyProcess(string id) => StartPayment(id, "OnPayment", OnPayment);
+        protected override void BuyProcess(string id) => StartPayment(id, string.Empty, OnPayment);
 
         #region RESTORE
 
@@ -107,6 +119,30 @@ namespace UniStore
 
         #region IAP Functions
 
+        private static IAPProductType GetProductType(ProductVo product)
+        {
+            return GetProductType(product.mType, product.mConsumableYN);
+        }
+
+        private static IAPProductType GetProductType(PurchaseVo product)
+        {
+            return GetProductType(product.mType, product.mConsumableYN);
+        }
+
+        private static IAPProductType GetProductType(OwnedProductVo product)
+        {
+            return GetProductType(product.mType, product.mConsumableYN);
+        }
+
+        private static IAPProductType GetProductType(string type, string consumableYN)
+        {
+            return type switch
+            {
+                "subscription" => IAPProductType.Subscription,
+                _ => consumableYN == "Y" ? IAPProductType.Consumable : IAPProductType.NonConsumable
+            };
+        }
+
         private static PurchaseInfo ConvertToProduct(PurchaseVo purchaseVo)
         {
             return new PurchaseInfo
@@ -114,7 +150,7 @@ namespace UniStore
                 ProductId = purchaseVo.mItemId,
                 Price = purchaseVo.mItemPriceString,
                 Currency = purchaseVo.mCurrencyCode,
-                Type = purchaseVo.mConsumableYN == "Y" ? ProductType.Consumable : ProductType.NonConsumable
+                Type = GetProductType(purchaseVo)
             };
         }
 
@@ -125,7 +161,7 @@ namespace UniStore
                 ProductId = productVo.mItemId,
                 Price = productVo.mItemPriceString,
                 Currency = productVo.mCurrencyCode,
-                Type = productVo.mConsumableYN == "Y" ? ProductType.Consumable : ProductType.NonConsumable
+                Type = GetProductType(productVo)
             };
         }
 
@@ -177,11 +213,9 @@ namespace UniStore
 
         #region CALLBACKS
 
-        public void OnGetProductsDetails(string resultJSON)
+        public void OnGetProductsDetails(ProductInfoList productList)
         {
-            var productList = JsonUtility.FromJson<ProductInfoList>(resultJSON);
 #if DEBUG
-            Debug.Log($"<b>[SamsungStore]</b> OnGetProductsDetails : {resultJSON}");
             Debug.Log($"<b>[SamsungStore]</b> OnGetProductsDetails cnt: {productList.results.Count}");
 
             for (var i = 0; i < productList.results.Count; ++i)
@@ -213,12 +247,9 @@ namespace UniStore
             }
         }
 
-        private void OnConsumePurchasedItems(string resultJSON)
+        private void OnConsumePurchasedItems(ConsumedList consumedList)
         {
-            var consumedList = JsonUtility.FromJson<ConsumedList>(resultJSON);
-
 #if DEBUG
-            Debug.Log($"<b>[SamsungStore]</b> OnConsumePurchasedItems: {resultJSON}");
             Debug.Log($"<b>[SamsungStore]</b> OnConsumePurchasedItems cnt: {consumedList.results.Count}");
 
             foreach (var consumeResult in consumedList.results)
@@ -233,7 +264,7 @@ namespace UniStore
         {
             if ((purchasedInfo.errorInfo?.errorCode ?? 1) != 0) return;
             if (purchasedInfo.results == null) return;
-            
+
             _purchased.Add(purchasedInfo.results.mItemId);
 #if DEBUG
             if (purchasedInfo.results.mPassThroughParam != _savedPassthroughParam)
@@ -242,12 +273,12 @@ namespace UniStore
             }
 #endif
             OnStartPaymentListener?.Invoke(purchasedInfo);
-            
+
             PurchaseSuccess(ConvertToProduct(purchasedInfo.results), string.Empty);
 
             if (purchasedInfo.results.mConsumableYN == "Y")
             {
-                ConsumePurchasedItems(purchasedInfo.results.mItemId, OnConsumePurchasedItemListener);
+                ConsumePurchasedItems(purchasedInfo.results.mItemId, OnConsumePurchasedItems);
             }
         }
 

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace UniStore
 {
-    public class UniversalStore : IStore, IInitable
+    public class UniversalStore : IStore, IInitializable
     {
         public event Action<bool> OnInitialized;
         public event Action<PurchaseInfo> OnPurchaseStarted;
@@ -12,7 +12,7 @@ namespace UniStore
         public event Action<bool> OnRestore;
 
         public IDictionary<string, IAPProduct> Products => _store?.Products;
-        public bool IsInitialized => _store is IInitable { IsInitialized: true };
+        public bool IsInitialized => _store is IInitializable { IsInitialized: true };
 
         private readonly IStore _store;
 
@@ -36,9 +36,9 @@ namespace UniStore
             _store = new UnityPurchasingStore(products, validator);
 #endif
 #endif
-            if (_store is IInitable initable)
+            if (_store is IInitializable initializable)
             {
-                initable.OnInitialized += OnInitialized;
+                initializable.OnInitialized += OnInitialized;
             }
 
             _store.OnPurchaseStarted += OnPurchaseStarted;
@@ -48,9 +48,11 @@ namespace UniStore
             _store.OnRestore += OnRestore;
         }
 
-        public void Initialize() => (_store as IInitable)?.Initialize();
+        public void Initialize() => (_store as IInitializable)?.Initialize();
 
         public bool IsPurchased(string id) => _store.IsPurchased(id);
+        
+        public PurchaseInfo GetProductInfo(string id) => _store.GetProductInfo(id);
 
         public string GetPrice(string id) => _store.GetPrice(id);
 

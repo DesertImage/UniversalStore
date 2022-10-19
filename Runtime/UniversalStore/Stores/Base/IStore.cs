@@ -15,6 +15,8 @@ namespace UniStore
 
         bool IsPurchased(string id);
 
+        PurchaseInfo GetProductInfo(string id);
+        
         string GetPrice(string id);
 
         void Buy(string id);
