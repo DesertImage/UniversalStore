@@ -36,7 +36,7 @@ namespace UniStore
                 await Task.Yield();
             }
 
-            var result = webRequest.result == UnityWebRequest.Result.Success;
+            var result = !webRequest.isHttpError && !webRequest.isNetworkError;
             if (result)
             {
 #if DEBUG
