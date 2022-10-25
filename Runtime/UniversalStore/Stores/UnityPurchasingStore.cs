@@ -38,8 +38,8 @@ namespace UniStore
 
                 var catalog = ProductCatalog.LoadDefaultCatalog();
 
-                var product = catalog.allProducts.First(x => x.id == id);
-                builder.AddProduct(id, product.type);
+                var product = catalog.allProducts.FirstOrDefault(x => x.id == id);
+                builder.AddProduct(id, product?.type ?? (ProductType)pair.Value.Type);
             }
 
             SetupBuilder(builder);
@@ -51,10 +51,7 @@ namespace UniStore
         {
         }
 
-        public override bool IsPurchased(string id)
-        {
-            return _purchased.Contains(id);
-        }
+        public override bool IsPurchased(string id) => _purchased.Contains(id);
 
         public override string GetPrice(string id)
         {
@@ -81,10 +78,7 @@ namespace UniStore
 
         #region RESTORE
 
-        public override void RestorePurchases()
-        {
-            TryRestorePurchases(Restored);
-        }
+        public override void RestorePurchases() => TryRestorePurchases(Restored);
 
         public override void TryRestorePurchases(Action<bool> callback)
         {
@@ -114,10 +108,7 @@ namespace UniStore
 
         #endregion
 
-        public override IStore CreateNewInstance()
-        {
-            return new UnityPurchasingStore(Products?.Values, Validator);
-        }
+        public override IStore CreateNewInstance() => new UnityPurchasingStore(Products?.Values, Validator);
 
         private void ApplyPurchase(PurchaseEventArgs purchaseEvent)
         {
@@ -161,7 +152,7 @@ namespace UniStore
         public void OnInitializeFailed(InitializationFailureReason error)
         {
 #if DEBUG
-            Debug.LogError("<b>[UnityPurchasingStore]</b> initialization failed:\n{error}");
+            Debug.LogError($"<b>[UnityPurchasingStore]</b> initialization failed:\n{error}");
 #endif
             _initializationFailed = true;
 
@@ -170,13 +161,9 @@ namespace UniStore
 
         public PurchaseProcessingResult ProcessPurchase(PurchaseEventArgs purchaseEvent)
         {
-            var id = purchaseEvent.purchasedProduct.definition.id;
-
             if (!purchaseEvent.purchasedProduct.hasReceipt) return PurchaseProcessingResult.Complete;
 
-            void SuccessPurchase()
-            {
-            }
+            var id = purchaseEvent.purchasedProduct.definition.id;
 
             if (Validator != null)
             {
@@ -193,7 +180,6 @@ namespace UniStore
                     ApplyPurchase(purchaseEvent);
 
                     var metadata = purchaseEvent.purchasedProduct.metadata;
-
                     PurchaseSuccess
                     (
                         new PurchaseInfo
@@ -208,7 +194,17 @@ namespace UniStore
             }
             else
             {
-                SuccessPurchase();
+                var metadata = purchaseEvent.purchasedProduct.metadata;
+                PurchaseSuccess
+                (
+                    new PurchaseInfo
+                    {
+                        ProductId = id,
+                        Price = metadata.localizedPrice.ToString(CultureInfo.InvariantCulture),
+                        Currency = metadata.isoCurrencyCode
+                    },
+                    purchaseEvent.purchasedProduct.receipt
+                );
             }
 
             return PurchaseProcessingResult.Complete;

@@ -107,7 +107,16 @@ namespace UniStore
         {
             if (_iapInstance != null)
             {
-                _iapInstance.Call(name, arguments);
+                try
+                {
+                    _iapInstance.Call(name, arguments);
+                }
+                catch (Exception e)
+                {
+                    #if DEBUG
+                    UnityEngine.Debug.LogError("<b>[SamsungStore]</b> " + e);
+                    #endif
+                }
             }
             else
             {
@@ -136,11 +145,13 @@ namespace UniStore
 
         private static IAPProductType GetProductType(string type, string consumableYN)
         {
-            return type switch
+            switch (type)
             {
-                "subscription" => IAPProductType.Subscription,
-                _ => consumableYN == "Y" ? IAPProductType.Consumable : IAPProductType.NonConsumable
-            };
+                case "subscription":
+                    return IAPProductType.Subscription;
+                default:
+                    return consumableYN == "Y" ? IAPProductType.Consumable : IAPProductType.NonConsumable;
+            }
         }
 
         private static PurchaseInfo ConvertToProduct(PurchaseVo purchaseVo)

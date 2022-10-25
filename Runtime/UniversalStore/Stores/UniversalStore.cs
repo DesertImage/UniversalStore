@@ -12,7 +12,7 @@ namespace UniStore
         public event Action<bool> OnRestore;
 
         public IDictionary<string, IAPProduct> Products => _store?.Products;
-        public bool IsInitialized => _store is IInitializable { IsInitialized: true };
+        public bool IsInitialized => _store is IInitializable initializable && initializable.IsInitialized;
 
         private readonly IStore _store;
 
@@ -22,11 +22,10 @@ namespace UniStore
 
 #if DUMMY_STORE
             _store = new DummyStore(products);
-#else
-#if HUAWEI
+#elif HUAWEI
             _store = new HuaweiStore(products);
-#elif SAMSUNG
-            _store = new SamsungStore(products);
+ #elif SAMSUNG
+             _store = new SamsungStore(products);
 #elif UNITY_ANDROID
             validator = string.IsNullOrEmpty(validationUrl) ? null : new AndroidValidator(validationUrl);
             _store = new UnityPurchasingStore(products, validator);
@@ -34,7 +33,6 @@ namespace UniStore
             _store = new WindowsStore(products, validator);
 #else
             _store = new UnityPurchasingStore(products, validator);
-#endif
 #endif
             if (_store is IInitializable initializable)
             {
