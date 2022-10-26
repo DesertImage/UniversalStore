@@ -3,13 +3,13 @@ using System.Text;
 
 namespace UniStore
 {
-    public class AndroidValidator : BaseValidator
+    public class AndroidValidator : SimpleValidator
     {
         public AndroidValidator(string url) : base(url)
         {
         }
 
-        protected override string SetupReceipt(string receipt)
+        protected override string GetFinalReceipt(string receipt)
         {
             var bytesToEncode = Encoding.UTF8.GetBytes(receipt);
 

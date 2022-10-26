@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Newtonsoft.Json.Linq;
 using Samsung;
 using UnityEngine;
 
@@ -113,9 +114,9 @@ namespace UniStore
                 }
                 catch (Exception e)
                 {
-                    #if DEBUG
+#if DEBUG
                     UnityEngine.Debug.LogError("<b>[SamsungStore]</b> " + e);
-                    #endif
+#endif
                 }
             }
             else
@@ -161,6 +162,8 @@ namespace UniStore
                 ProductId = purchaseVo.mItemId,
                 Price = purchaseVo.mItemPriceString,
                 Currency = purchaseVo.mCurrencyCode,
+                PurchaseDate = purchaseVo.mPurchaseDate,
+                PurchaseId = purchaseVo.mPurchaseId,
                 Type = GetProductType(purchaseVo)
             };
         }
@@ -172,6 +175,8 @@ namespace UniStore
                 ProductId = productVo.mItemId,
                 Price = productVo.mItemPriceString,
                 Currency = productVo.mCurrencyCode,
+                PurchaseDate = productVo.mPurchaseDate,
+                PurchaseId = productVo.mPurchaseId,
                 Type = GetProductType(productVo)
             };
         }
@@ -254,7 +259,13 @@ namespace UniStore
 
             foreach (var productVo in ownedList.results)
             {
-                PurchaseSuccess(ConvertToProduct(productVo), string.Empty);
+                var json = new JObject
+                {
+                    { "bundle_id", Application.identifier },
+                    { "purchase_id", productVo.mPurchaseId },
+                };
+
+                PurchaseSuccess(ConvertToProduct(productVo), json.ToString());
             }
         }
 

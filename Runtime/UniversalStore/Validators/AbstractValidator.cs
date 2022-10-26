@@ -6,18 +6,18 @@ using UnityEngine.Networking;
 
 namespace UniStore
 {
-    public class BaseValidator : IValidator
+    public abstract class AbstractValidator<TValidateResponse> : IValidator
     {
         private readonly string _url;
 
-        public BaseValidator(string url)
+        public AbstractValidator(string url)
         {
             _url = url;
         }
 
         public async Task Validate(string receipt, Action<bool> callback)
         {
-            receipt = SetupReceipt(receipt);
+            receipt = GetFinalReceipt(receipt);
 
             var form = new WWWForm();
 
@@ -36,39 +36,36 @@ namespace UniStore
                 await Task.Yield();
             }
 
+#if UNITY_2020_1_OR_NEWER
+            var result = webRequest.result == UnityWebRequest.Result.Success;
+#else
             var result = !webRequest.isHttpError && !webRequest.isNetworkError;
+#endif
             if (result)
             {
 #if DEBUG
                 Debug.Log($"Response data:\n" + $"{webRequest.downloadHandler.text}");
 #endif
-                var response = JsonConvert.DeserializeObject<ValidationResponse>(webRequest.downloadHandler.text);
-
-                result &= response?.Status == "0";
+                result = IsResponseValid
+                (
+                    JsonConvert.DeserializeObject<TValidateResponse>(webRequest.downloadHandler.text)
+                );
             }
 
             callback?.Invoke(result);
         }
 
-        protected virtual string SetupReceipt(string receipt)
-        {
-            var unifiedReceipt = JsonUtility.FromJson<Receipt>(receipt);
+        protected abstract bool IsResponseValid(TValidateResponse response);
 
-            if (unifiedReceipt != null && !string.IsNullOrEmpty(unifiedReceipt.Payload))
-            {
-                return unifiedReceipt.Payload;
-            }
+        protected virtual string GetFinalReceipt(string receipt) => receipt;
 
-            return receipt;
-        }
+        protected virtual string GetBundleId() => Application.identifier;
+        protected virtual string GetUserId() => SystemInfo.deviceUniqueIdentifier;
 
         protected virtual WWWForm SetupParams(WWWForm form, string receipt)
         {
-            var bundleId = Application.identifier;
-            var userId = SystemInfo.deviceUniqueIdentifier;
-
-            form.AddField("bundle_id", bundleId);
-            form.AddField("user_id", userId);
+            form.AddField("bundle_id", GetBundleId());
+            form.AddField("user_id", GetUserId());
             form.AddField("receipt", receipt);
 
             return form;

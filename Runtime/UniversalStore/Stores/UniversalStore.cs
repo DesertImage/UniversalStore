@@ -18,14 +18,14 @@ namespace UniStore
 
         public UniversalStore(IEnumerable<IAPProduct> products, string validationUrl = "")
         {
-            IValidator validator = string.IsNullOrEmpty(validationUrl) ? null : new BaseValidator(validationUrl);
+            IValidator validator = string.IsNullOrEmpty(validationUrl) ? null : new SimpleValidator(validationUrl);
 
-#if DUMMY_STORE
-            _store = new DummyStore(products);
+#if FAKE_STORE
+            _store = new FakeStore(products);
 #elif HUAWEI
             _store = new HuaweiStore(products);
- #elif SAMSUNG
-             _store = new SamsungStore(products);
+#elif SAMSUNG
+             _store = new SamsungStore(products, validator);
 #elif UNITY_ANDROID
             validator = string.IsNullOrEmpty(validationUrl) ? null : new AndroidValidator(validationUrl);
             _store = new UnityPurchasingStore(products, validator);
@@ -49,7 +49,7 @@ namespace UniStore
         public void Initialize() => (_store as IInitializable)?.Initialize();
 
         public bool IsPurchased(string id) => _store.IsPurchased(id);
-        
+
         public PurchaseInfo GetProductInfo(string id) => _store.GetProductInfo(id);
 
         public string GetPrice(string id) => _store.GetPrice(id);

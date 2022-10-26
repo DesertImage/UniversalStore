@@ -3,11 +3,11 @@ using System.Collections.Generic;
 
 namespace UniStore
 {
-    public class DummyStore : BaseStore
+    public class FakeStore : BaseStore
     {
         private readonly HashSet<string> _purchased;
 
-        public DummyStore(IEnumerable<IAPProduct> products, IValidator validator = null) : base(products, validator)
+        public FakeStore(IEnumerable<IAPProduct> products, IValidator validator = null) : base(products, validator)
         {
             _purchased = new HashSet<string>();
         }
@@ -38,6 +38,6 @@ namespace UniStore
 
         #endregion
 
-        public override IStore CreateNewInstance() => new DummyStore(Products?.Values, Validator);
+        public override IStore CreateNewInstance() => new FakeStore(Products?.Values, Validator);
     }
 }

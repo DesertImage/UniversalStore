@@ -164,10 +164,19 @@ namespace UniStore
             if (!purchaseEvent.purchasedProduct.hasReceipt) return PurchaseProcessingResult.Complete;
 
             var id = purchaseEvent.purchasedProduct.definition.id;
+            var metadata = purchaseEvent.purchasedProduct.metadata;
+
+            var purchaseInfo = new PurchaseInfo
+            {
+                ProductId = id,
+                Price = metadata.localizedPrice.ToString(CultureInfo.InvariantCulture),
+                PurchaseId = purchaseEvent.purchasedProduct.transactionID,
+                Currency = metadata.isoCurrencyCode
+            };
 
             if (Validator != null)
             {
-                var receiptPayload = string.Empty;
+                var receiptPayload = purchaseEvent.purchasedProduct.receipt;
 #if UNITY_IOS || AMAZON
                     var receipt = JsonConvert.DeserializeObject<Receipt>(purchaseEvent.purchasedProduct.receipt);
                     receiptPayload = receipt?.Payload;
@@ -179,30 +188,18 @@ namespace UniStore
 #endif
                     ApplyPurchase(purchaseEvent);
 
-                    var metadata = purchaseEvent.purchasedProduct.metadata;
                     PurchaseSuccess
                     (
-                        new PurchaseInfo
-                        {
-                            ProductId = id,
-                            Price = metadata.localizedPrice.ToString(CultureInfo.InvariantCulture),
-                            Currency = metadata.isoCurrencyCode
-                        },
-                        purchaseEvent.purchasedProduct.receipt
+                        purchaseInfo,
+                        receiptPayload
                     );
                 });
             }
             else
             {
-                var metadata = purchaseEvent.purchasedProduct.metadata;
                 PurchaseSuccess
                 (
-                    new PurchaseInfo
-                    {
-                        ProductId = id,
-                        Price = metadata.localizedPrice.ToString(CultureInfo.InvariantCulture),
-                        Currency = metadata.isoCurrencyCode
-                    },
+                    purchaseInfo,
                     purchaseEvent.purchasedProduct.receipt
                 );
             }
