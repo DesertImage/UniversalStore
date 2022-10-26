@@ -2,9 +2,9 @@ using UnityEngine;
 
 namespace UniStore
 {
-    public class UnifiedValidator : SimpleValidator
+    public class PayoutValidator : SimpleValidator
     {
-        public UnifiedValidator(string url) : base(url)
+        public PayoutValidator(string url) : base(url)
         {
         }
 

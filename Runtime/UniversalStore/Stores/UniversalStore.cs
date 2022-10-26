@@ -32,7 +32,7 @@ namespace UniStore
 #elif UNITY_WSA || UNITY_WSA_10_0
             _store = new WindowsStore(products, validator);
 #else
-            _store = new UnityPurchasingStore(products, validator);
+            _store = new UnityPurchasingStore(products, new PayoutValidator(validationUrl));
 #endif
             if (_store is IInitializable initializable)
             {
